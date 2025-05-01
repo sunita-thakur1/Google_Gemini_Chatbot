@@ -1,49 +1,62 @@
 import streamlit as st
 import google.generativeai as genai
-import os
+from PIL import Image
+import io
 # Streamlit cloud>settings>Secrets paste and save code given below
 # GENAI_API_KEY = "your_gemini_api_key_here"
 
 api_key = st.secrets["GENAI_API_KEY"]
 genai.configure(api_key=api_key)
 
-# Replace with your API key (Google AI studio API key)
-#Donot use my API key
-# Link for Google AI studio to generate API key: https://aistudio.google.com/app/prompts/new_chat
+# ---- SETUP ----
+st.set_page_config(page_title="Gemini Flash 2 Chatbot", page_icon="🤖")
 
-# --- Set your Gemini API key ---
-#GENAI_API_KEY = "AIzaSyCHcN21zyLQNwsraNsv1I0rXiWDNduFvFY"
-#genai.configure(api_key=GENAI_API_KEY)
+st.title("🤖 Gemini Flash 2 Chatbot with Uploads")
 
-# --- Initialize Gemini Flash 2 model 
-model = genai.GenerativeModel("gemini-2.0-flash")
+# Set your API key here (or use st.secrets for safety)
+#genai.configure(api_key="YOUR_API_KEY")
 
-# --- Session State for Chat History ---
+# Load Gemini Flash 2 model
+model = genai.GenerativeModel(model_name="gemini-2.0-flash")
+
+# Initialize session state
 if "chat" not in st.session_state:
     st.session_state.chat = model.start_chat(history=[])
-if "messages" not in st.session_state:
-    st.session_state.messages = []
 
-# --- Streamlit App UI ---
-st.title("💬 Gemini Flash 2 Chatbot")
-st.markdown("Type your message below and interact with Google's Gemini model in real time.")
+# ---- FILE UPLOAD ----
+st.sidebar.header("📎 Attach Files")
+uploaded_files = st.sidebar.file_uploader(
+    "Upload file(s), screenshot or image",
+    accept_multiple_files=True,
+    type=["txt", "pdf", "png", "jpg", "jpeg"],
+)
 
-# Display previous messages
-for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
+attachments = []
+if uploaded_files:
+    for file in uploaded_files:
+        if file.type.startswith("image/"):
+            image = Image.open(file)
+            attachments.append(genai.types.content.ImagePart.from_pil(image))
+            st.sidebar.image(image, caption=file.name, use_column_width=True)
+        else:
+            content = file.read().decode("utf-8", errors="ignore")
+            attachments.append(genai.types.content.TextPart(text=content))
+            st.sidebar.success(f"Attached: {file.name}")
 
-# User input
-user_input = st.chat_input("Say something...")
+# ---- CHAT INTERFACE ----
+user_input = st.chat_input("Ask anything...")
+
 if user_input:
-    # Display user message
-    st.chat_message("user").markdown(user_input)
-    st.session_state.messages.append({"role": "user", "content": user_input})
+    st.session_state.chat.history.append({"role": "user", "parts": [user_input]})
+    with st.spinner("Thinking..."):
+        if attachments:
+            response = st.session_state.chat.send_message([user_input] + attachments)
+        else:
+            response = st.session_state.chat.send_message(user_input)
+    st.session_state.chat.history.append({"role": "model", "parts": [response.text]})
 
-    # Get response from Gemini Flash 2
-    response = st.session_state.chat.send_message(user_input)
-    reply = response.text
-
-    # Display bot message
-    st.chat_message("assistant").markdown(reply)
-    st.session_state.messages.append({"role": "assistant", "content": reply})
+# Display chat history
+for msg in st.session_state.chat.history:
+    with st.chat_message(msg["role"]):
+        for part in msg["parts"]:
+            st.markdown(part.text if hasattr(part, "text") else str(part))
