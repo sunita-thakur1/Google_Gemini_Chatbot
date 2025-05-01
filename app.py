@@ -52,7 +52,7 @@ if user_input:
     with st.spinner("Thinking..."):
         if attachments:
             response = st.session_state.chat.send_message(
-                parts=[user_input] + attachments
+                [user_input] + attachments
             )
         else:
             response = st.session_state.chat.send_message(user_input)
