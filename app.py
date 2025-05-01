@@ -5,55 +5,58 @@ import io
 # Streamlit cloud>settings>Secrets paste and save code given below
 # GENAI_API_KEY = "your_gemini_api_key_here"
 
+# ---- CONFIG ----
+st.set_page_config(page_title="Gemini Flash 2 Chatbot", page_icon="🤖")
+st.title("🤖 Gemini Flash 2 Chatbot with File/Image Uploads")
+
+# Configure Gemini
 api_key = st.secrets["GENAI_API_KEY"]
 genai.configure(api_key=api_key)
 
-# ---- SETUP ----
-st.set_page_config(page_title="Gemini Flash 2 Chatbot", page_icon="🤖")
+model = genai.GenerativeModel("gemini-2.0-flash")
 
-st.title("🤖 Gemini Flash 2 Chatbot with Uploads")
-
-# Set your API key here (or use st.secrets for safety)
-#genai.configure(api_key="YOUR_API_KEY")
-
-# Load Gemini Flash 2 model
-model = genai.GenerativeModel(model_name="gemini-2.0-flash")
-
-# Initialize session state
+# Chat initialization
 if "chat" not in st.session_state:
-    st.session_state.chat = model.start_chat(history=[])
+    st.session_state.chat = model.start_chat()
 
-# ---- FILE UPLOAD ----
-st.sidebar.header("📎 Attach Files")
+# ---- FILE UPLOADS ----
+st.sidebar.header("📎 Attach Files or Images")
 uploaded_files = st.sidebar.file_uploader(
-    "Upload file(s), screenshot or image",
+    "Upload text, screenshots, or image files",
     accept_multiple_files=True,
-    type=["txt", "pdf", "png", "jpg", "jpeg", "csv"],
+    type=["txt", "pdf", "png", "jpg", "jpeg"],
 )
 
 attachments = []
 if uploaded_files:
     for file in uploaded_files:
         if file.type.startswith("image/"):
-            image = Image.open(file)
-            attachments.append(genai.types.content.ImagePart.from_pil(image))
-            st.sidebar.image(image, caption=file.name, use_column_width=True)
+            img = Image.open(file)
+            attachments.append(genai.types.content.ImagePart.from_pil(img))
+            st.sidebar.image(img, caption=file.name)
         else:
-            content = file.read().decode("utf-8", errors="ignore")
-            attachments.append(genai.types.content.TextPart(text=content))
-            st.sidebar.success(f"Attached: {file.name}")
+            try:
+                text = file.read().decode("utf-8", errors="ignore")
+                attachments.append(genai.types.content.TextPart(text=text))
+                st.sidebar.success(f"Text attached: {file.name}")
+            except Exception as e:
+                st.sidebar.error(f"Couldn't read {file.name}: {e}")
 
-# ---- CHAT INTERFACE ----
-user_input = st.chat_input("Ask anything...")
+# ---- CHAT INPUT ----
+prompt = st.chat_input("Ask something...")
+if prompt:
+    with st.chat_message("user"):
+        st.markdown(prompt)
 
-if user_input:
-    st.session_state.chat.history.append({"role": "user", "parts": [user_input]})
-    with st.spinner("Thinking..."):
-        if attachments:
-            response = st.session_state.chat.send_message([user_input] + attachments)
-        else:
-            response = st.session_state.chat.send_message(user_input)
-    st.session_state.chat.history.append({"role": "model", "parts": [response.text]})
+    with st.spinner("Gemini is thinking..."):
+        response = (
+            st.session_state.chat.send_message([prompt] + attachments)
+            if attachments else
+            st.session_state.chat.send_message(prompt)
+        )
+
+    with st.chat_message("assistant"):
+        st.markdown(response.text)
 
 # ---- DISPLAY HISTORY ----
 for msg in st.session_state.chat.history:
