@@ -24,7 +24,7 @@ st.sidebar.header("📎 Attach Files or Images")
 uploaded_files = st.sidebar.file_uploader(
     "Upload text, screenshots, or image files",
     accept_multiple_files=True,
-    type=["txt", "pdf", "png", "jpg", "jpeg"],
+    type=["txt", "pdf", "png", "jpg", "jpeg", "csv"],
 )
 
 attachments = []
