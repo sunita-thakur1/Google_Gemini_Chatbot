@@ -35,11 +35,11 @@ if uploaded_files:
     for file in uploaded_files:
         if file.type.startswith("image/"):
             img = Image.open(file)
-            attachments.append(genai.types.content.ImagePart.from_pil(img))
+            attachments.append({"mime_type": file.type, "data": file.read()})
             st.sidebar.image(img, caption=file.name)
         else:
             content = file.read().decode("utf-8", errors="ignore")
-            attachments.append(genai.types.content.TextPart(text=content))
+            attachments.append({"text": content})
             st.sidebar.success(f"Attached: {file.name}")
 
 # ---- USER INPUT ----
@@ -50,19 +50,21 @@ if user_input:
         st.markdown(user_input)
 
     with st.spinner("Thinking..."):
-        response = (
-            st.session_state.chat.send_message([user_input] + attachments)
-            if attachments else
-            st.session_state.chat.send_message(user_input)
-        )
+        if attachments:
+            response = st.session_state.chat.send_message(
+                parts=[user_input] + attachments
+            )
+        else:
+            response = st.session_state.chat.send_message(user_input)
 
     with st.chat_message("assistant"):
         st.markdown(response.text)
 
 # ---- DISPLAY CHAT HISTORY ----
 for msg in st.session_state.chat.history:
-    if hasattr(msg, "role") and hasattr(msg, "parts"):  # ensure it's a Gemini Content object
-        with st.chat_message(msg.role):
-            for part in msg.parts:
-                if hasattr(part, "text"):
-                    st.markdown(part.text)
+    with st.chat_message(msg.role):
+        for part in msg.parts:
+            if hasattr(part, "text"):
+                st.markdown(part.text)
+            elif hasattr(part, "inline_data") and hasattr(part.inline_data, "data"):
+                st.image(io.BytesIO(part.inline_data.data), caption="Attached Image")
