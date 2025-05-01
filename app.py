@@ -10,7 +10,9 @@ st.set_page_config(page_title="Gemini 2.0 Flash Chatbot", page_icon="🤖")
 st.title("🤖 Gemini 2.0 Flash Chatbot with Uploads")
 
 # ---- API KEY FROM SECRETS ----
-genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
+api_key = st.secrets["GENAI_API_KEY"]
+genai.configure(api_key=api_key)
+
 
 # ---- GEMINI 2.0 FLASH MODEL ----
 model = genai.GenerativeModel(model_name="gemini-2.0-flash")
