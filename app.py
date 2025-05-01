@@ -8,8 +8,8 @@ import google.generativeai as genai
 GENAI_API_KEY = "AIzaSyCHcN21zyLQNwsraNsv1I0rXiWDNduFvFY"
 genai.configure(api_key=GENAI_API_KEY)
 
-# --- Initialize Gemini Flash 2 model ---
- model = genai.GenerativeModel("gemini-2.0-flash")
+# --- Initialize Gemini Flash 2 model 
+model = genai.GenerativeModel("gemini-2.0-flash")
 
 # --- Session State for Chat History ---
 if "chat" not in st.session_state:
