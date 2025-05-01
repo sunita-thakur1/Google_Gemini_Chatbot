@@ -61,7 +61,8 @@ if user_input:
 
 # ---- DISPLAY CHAT HISTORY ----
 for msg in st.session_state.chat.history:
-    with st.chat_message(msg.role):
-        for part in msg.parts:
-            if hasattr(part, "text"):
-                st.markdown(part.text)
+    if hasattr(msg, "role") and hasattr(msg, "parts"):  # ensure it's a Gemini Content object
+        with st.chat_message(msg.role):
+            for part in msg.parts:
+                if hasattr(part, "text"):
+                    st.markdown(part.text)
