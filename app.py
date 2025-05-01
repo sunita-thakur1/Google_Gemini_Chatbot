@@ -57,6 +57,9 @@ if user_input:
 
 # Display chat history
 for msg in st.session_state.chat.history:
-    with st.chat_message(msg["role"]):
-        for part in msg["parts"]:
-            st.markdown(part.text if hasattr(part, "text") else str(part))
+    with st.chat_message(msg.role):
+        for part in msg.parts:
+            if hasattr(part, "text"):
+                st.markdown(part.text)
+            else:
+                st.write(part)
