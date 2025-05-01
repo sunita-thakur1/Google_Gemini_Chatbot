@@ -2,6 +2,7 @@ import streamlit as st
 import google.generativeai as genai
 
 # Replace with your API key (Google AI studio API key)
+#Donot use my API key
 # Link for Google AI studio to generate API key: https://aistudio.google.com/app/prompts/new_chat
 
 # --- Set your Gemini API key ---
