@@ -55,11 +55,9 @@ if user_input:
             response = st.session_state.chat.send_message(user_input)
     st.session_state.chat.history.append({"role": "model", "parts": [response.text]})
 
-# Display chat history
+# ---- DISPLAY HISTORY ----
 for msg in st.session_state.chat.history:
     with st.chat_message(msg.role):
         for part in msg.parts:
             if hasattr(part, "text"):
                 st.markdown(part.text)
-            else:
-                st.write(part)
