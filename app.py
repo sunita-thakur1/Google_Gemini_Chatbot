@@ -17,58 +17,43 @@ genai.configure(api_key=api_key)
 # ---- GEMINI 2.0 FLASH MODEL ----
 model = genai.GenerativeModel(model_name="gemini-2.0-flash")
 
-# ---- SESSION STATE FOR CHAT ----
+# ---- INITIALIZE CHAT ----
 if "chat" not in st.session_state:
     st.session_state.chat = model.start_chat()
 
-# ---- FILE UPLOADS ----
-st.sidebar.header("📎 Upload Files (CSV, TXT, Images)")
+# ---- SIDEBAR FILE UPLOAD ----
+st.sidebar.header("📎 Attach Files or Images")
 uploaded_files = st.sidebar.file_uploader(
-    "Upload files",
-    type=["csv", "txt", "png", "jpg", "jpeg"],
+    "Upload text or images",
+    type=["txt", "png", "jpg", "jpeg", "csv"],
     accept_multiple_files=True,
 )
 
+# Convert uploads to Gemini content parts
 attachments = []
-
-# ---- HANDLE FILES ----
 if uploaded_files:
     for file in uploaded_files:
-        mime = file.type or "application/octet-stream"
-
-        if file.name.endswith(".csv"):
-            df = pd.read_csv(file)
-            content = df.to_csv(index=False)
-            blob = genai.upload_file(data=content.encode("utf-8"), mime_type="text/plain")
-            attachments.append(blob)
-            st.sidebar.success(f"Attached CSV: {file.name}")
-
-        elif file.name.endswith(".txt"):
-            text = file.read().decode("utf-8", errors="ignore")
-            blob = genai.upload_file(data=text.encode("utf-8"), mime_type="text/plain")
-            attachments.append(blob)
-            st.sidebar.success(f"Attached TXT: {file.name}")
-
-        elif mime.startswith("image/"):
-            image_data = file.read()
-            blob = genai.upload_file(data=image_data, mime_type=mime)
-            attachments.append(blob)
-            st.sidebar.image(Image.open(file), caption=file.name)
-
+        if file.type.startswith("image/"):
+            img = Image.open(file)
+            attachments.append(genai.types.content.ImagePart.from_pil(img))
+            st.sidebar.image(img, caption=file.name)
         else:
-            st.sidebar.warning(f"Unsupported file type: {file.name}")
+            content = file.read().decode("utf-8", errors="ignore")
+            attachments.append(genai.types.content.TextPart(text=content))
+            st.sidebar.success(f"Attached: {file.name}")
 
-# ---- USER PROMPT ----
-user_input = st.chat_input("Ask a question...")
+# ---- USER INPUT ----
+user_input = st.chat_input("Ask something...")
 
 if user_input:
     with st.chat_message("user"):
         st.markdown(user_input)
 
     with st.spinner("Thinking..."):
-        response = st.session_state.chat.send_message(
-            user_input,
-            files=attachments if attachments else None
+        response = (
+            st.session_state.chat.send_message([user_input] + attachments)
+            if attachments else
+            st.session_state.chat.send_message(user_input)
         )
 
     with st.chat_message("assistant"):
@@ -76,7 +61,7 @@ if user_input:
 
 # ---- DISPLAY CHAT HISTORY ----
 for msg in st.session_state.chat.history:
-    if hasattr(msg, "role") and hasattr(msg, "parts"):
+    if hasattr(msg, "role") and hasattr(msg, "parts"):  # ensure it's a Gemini Content object
         with st.chat_message(msg.role):
             for part in msg.parts:
                 if hasattr(part, "text"):
