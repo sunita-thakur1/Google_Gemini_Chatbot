@@ -2,7 +2,8 @@ import streamlit as st
 import google.generativeai as genai
 from PIL import Image
 import io
-# Streamlit cloud>settings>Secrets paste and save code given below
+# Streamlit cloud>settings>Secrets paste and save code given below after getting api key from Google AI studio
+# Link for Google AI studio to generate API key: https://aistudio.google.com/app/prompts/new_chat
 # GENAI_API_KEY = "your_gemini_api_key_here"
 
 # ---- STREAMLIT SETUP ----
