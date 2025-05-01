@@ -1,13 +1,19 @@
 import streamlit as st
 import google.generativeai as genai
+import os
+# Streamlit cloud>settings>Secrets paste and save code given below
+# GENAI_API_KEY = "your_gemini_api_key_here"
+
+api_key = st.secrets["GENAI_API_KEY"]
+genai.configure(api_key=api_key)
 
 # Replace with your API key (Google AI studio API key)
 #Donot use my API key
 # Link for Google AI studio to generate API key: https://aistudio.google.com/app/prompts/new_chat
 
 # --- Set your Gemini API key ---
-GENAI_API_KEY = "AIzaSyCHcN21zyLQNwsraNsv1I0rXiWDNduFvFY"
-genai.configure(api_key=GENAI_API_KEY)
+#GENAI_API_KEY = "AIzaSyCHcN21zyLQNwsraNsv1I0rXiWDNduFvFY"
+#genai.configure(api_key=GENAI_API_KEY)
 
 # --- Initialize Gemini Flash 2 model 
 model = genai.GenerativeModel("gemini-2.0-flash")
